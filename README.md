@@ -1,5 +1,7 @@
-# script-compressio-statics-PYTHON
-script utilisé pour la compression des assets statics
+# script compression statics (PYTHON)
+
+## script utilisé pour la compression des assets statics
+#### Utilisé en conjonction d'un htaccess (voir plus bas)
 
 ````py
 # coding: utf-8
@@ -316,4 +318,61 @@ for w in weigths.iteritems():
         print '  Pas de recompression !'
     print '------------------------------------'
 
+````
+
+#### htaccess pour les images
+
+````ht
+Options -MultiViews
+	
+
+<IfModule mod_rewrite.c>
+
+	RewriteEngine on
+	#RewriteBase /rmcfifa/_img/
+	
+	# webp
+	RewriteCond "%{HTTP:Accept}"	 "\bimage/webp\b"
+	RewriteCond %{REQUEST_FILENAME}.webp	-f
+	RewriteRule ^(.*)\.png$            	"$1\.png\.webp" [L,NC]
+	
+	RewriteCond "%{HTTP:Accept}"	 "\bimage/webp\b"
+	RewriteCond %{REQUEST_FILENAME}.webp	-f
+	RewriteRule ^(.*)\.jpg$            	"$1\.jpg\.webp" [L,NC]
+	
+
+
+</IfModule>
+
+
+<IfModule mod_headers.c>
+
+		Header unset ETag
+		FileETag None
+		
+		#Header unset Accept-Ranges
+				
+		# si mod_expires bug sur OVH du Cache-Control
+		# Header set Cache-Control "max-age=216000, private" # 2.5 jours
+		# Header set Cache-Control "max-age=604800, public" # 7 jours
+		Header set Cache-Control: "public, max-age=31536000, immutable"
+		
+		Header unset Content-Length
+
+		Header set content-length: totalbytes
+
+		Header set vary: Accept-Encoding
+
+</IfModule>
+
+
+
+<ifModule mod_expires.c>
+	# pagespeed insights n'a pas l'air de bien comprendre
+	ExpiresActive On 
+	#ExpiresDefault A259200
+	ExpiresDefault "access plus 2592000 seconds"
+	# ExpiresByType text/javascript "access plus 100 seconds"
+
+</ifModule>
 ````
