@@ -456,3 +456,101 @@ Options -MultiViews
 
 </ifModule>
 ````
+
+### Htaccess pour les CSS
+
+````ht
+Options -MultiViews
+	
+
+<IfModule mod_rewrite.c>
+	
+	RewriteEngine on 
+	
+	# css br
+	RewriteCond "%{HTTP:Accept-encoding}"	 br
+	RewriteCond %{REQUEST_FILENAME}.br	-f
+	RewriteRule "^(.*)\.css"            	"$1\.css\.br" [L,NC]
+	
+	# css gz
+	RewriteCond "%{HTTP:Accept-encoding}" "\b(x-)?gzip\b"
+	RewriteCond %{REQUEST_FILENAME}.gz -f
+	RewriteRule "^(.*)\.css"              "$1\.css\.gz" [L,NC]
+	
+	# css min
+	#RewriteCond "%{HTTP:Accept-encoding}" !"\b(x-)?gzip\b"
+		#RewriteRule ^(.*)\.css$              $1\.mincss [L]
+	#RewriteRule ^([^.]+)\.(css)$			$1\.min\.$2 [L,NC]
+	
+	RewriteCond "%{HTTP:Accept-encoding}" !"\b(x-)?gzip\b"
+	# rewrite .css -> min.css
+	RewriteRule ^([^.]+)\.(css)$			$1\.min\.$2 
+	# rewrite si min.css inexistant .min.css -> .css
+	RewriteCond %{REQUEST_FILENAME} !-f
+	RewriteRule ^([^.]+)\.(min.css)$			"$1.css" [L,NC]
+
+</IfModule>
+	
+	
+<IfModule mod_headers.c>	
+	
+	<FilesMatch "(\.css\.gz)$">
+		
+		# empeche le serveur de recompresser le gz
+		SetEnv no-gzip 1
+		
+		# si mod_expires bug sur OVH du Cache-Control
+		# Header set Cache-Control "max-age=216000, private" # 2.5 jours
+		# Header set Cache-Control "max-age=604800, public" # 7 jours
+		Header set Cache-Control: "public, max-age=2592000"
+		
+		Header unset Accept-Ranges
+		Header set content-encoding gzip
+		Header set content-length: totalbytes
+		Header set content-type: "text/css; charset=UTF-8"
+
+		Header set vary: Accept-Encoding
+		
+		# preco Google : https://code.google.com/archive/p/compress/
+		Header unset ETag
+		FileETag None
+			
+		
+    </FilesMatch>
+	
+	<FilesMatch "(\.css\.br)$">
+		
+		# empeche le serveur de recompresser le br
+		SetEnv no-gzip 1
+		
+		# si mod_expires bug sur OVH du Cache-Control
+		# Header set Cache-Control "max-age=216000, private" # 2.5 jours
+		# Header set Cache-Control "max-age=604800, public" # 7 jours
+		Header set Cache-Control: "public, max-age=2592000"
+		
+		Header unset Accept-Ranges
+		Header set content-encoding br
+		Header set content-length: totalbytes
+		Header set content-type: "text/css; charset=UTF-8"
+
+		Header set vary: Accept-Encoding
+		
+		# preco Google : https://code.google.com/archive/p/compress/
+		Header unset ETag
+		FileETag None
+			
+		
+    </FilesMatch>
+	
+</IfModule>
+
+
+<ifModule mod_expires.c>
+
+	ExpiresActive On 
+	#ExpiresDefault A604800
+	ExpiresDefault "access plus 2592000 seconds"
+	ExpiresByType text/css "access plus 2592000 seconds"
+
+</ifModule>
+````
