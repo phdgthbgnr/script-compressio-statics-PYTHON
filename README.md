@@ -376,3 +376,83 @@ Options -MultiViews
 
 </ifModule>
 ````
+
+### Htaccess pour les js (.min.js, .js.gz, .js.br)
+
+````ht
+Options -MultiViews
+	
+
+<IfModule mod_rewrite.c>
+
+	RewriteEngine on
+	#RewriteBase /test_gz/_js/
+	
+	# js br
+	RewriteCond "%{HTTP:Accept-encoding}"	 br
+	RewriteCond %{REQUEST_FILENAME}.br	-f
+	RewriteRule ^(.*)\.js$            	"$1\.js\.br" [L,NC]
+	
+	# js gz
+	RewriteCond "%{HTTP:Accept-encoding}" "\b(x-)?gzip\b"
+		#ReWriteCond %{REQUEST_FILENAME} !.+\.gz$ 
+	RewriteCond %{REQUEST_FILENAME}.gz -f
+	RewriteRule "^(.*)\.js"              "$1\.js\.gz" [L,NC]
+	
+	# js min	
+	RewriteCond "%{HTTP:Accept-encoding}" !"\b(x-)?gzip\b"
+	# rewrite .js -> min.js
+	RewriteRule ^([^.]+)\.(js)$			$1\.min\.$2 
+	# rewrite si min.js inexistant .min.js -> .js
+	RewriteCond %{REQUEST_FILENAME} !-f
+	RewriteRule ^([^.]+)\.(min.js)$			"$1.js" [L,NC]
+
+
+</IfModule>
+
+
+<IfModule mod_headers.c>
+
+		Header unset ETag
+		FileETag None
+		
+		#Header unset Accept-Ranges
+				
+		# si mod_expires bug sur OVH du Cache-Control
+		# Header set Cache-Control "max-age=216000, private" # 2.5 jours
+		# Header set Cache-Control "max-age=604800, public" # 7 jours
+		Header set Cache-Control: "public, max-age=2592000"
+		
+		Header unset Content-Length
+
+		Header set content-length: totalbytes
+		Header set content-type: "text/javascript; charset=utf-8"
+
+		Header set vary: Accept-Encoding
+		
+		
+	
+	<FilesMatch "(\.js\.gz)$">
+		SetEnv no-gzip 1
+		Header set content-encoding gzip
+    </FilesMatch>
+	
+	<FilesMatch "(\.js\.br)$">
+		SetEnv no-gzip 1		
+		Header set content-encoding br
+    </FilesMatch>
+
+	
+</IfModule>
+
+
+
+<ifModule mod_expires.c>
+	# pagespeed insights n'a pas l'air de bien comprendre
+	ExpiresActive On 
+	#ExpiresDefault A259200
+	ExpiresDefault "access plus 2592000 seconds"
+	ExpiresByType text/javascript "access plus 2592000 seconds"
+
+</ifModule>
+````
